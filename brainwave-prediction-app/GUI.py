@@ -1,3 +1,16 @@
+# How to run GUI.py:
+# - Navigate to the root of the project
+# - Run "python brainwave-prediction-app/GUI.py {readMode} {serial_port}"
+# -- {readMode}: Determines how the app will connect to OpenBCI. Supports "cyton" and "synthetic"
+# -- {serial_port}: Required by cyton mode. Determines which serial/com port you're using in OpenBCI
+# 
+# Example: Running the GUI while using synthetic mode in OpenBCI
+# - python brainwave-prediction-app/GUI.py synthetic
+#
+# Example: Running the GUI while using cyton mode in OpenBCI
+# - python brainwave-prediction-app/GUI.py cyton "/dev/ttyUSB0"
+# - (Replace "/dev/ttyUSB0" with the serial/com port you selected in OpenBCI)
+
 import PySimpleGUI as sg
 import time
 import random
@@ -15,11 +28,25 @@ from gui_windows.transfer_files_window import TransferData
 from djitellopy import Tello
 
 tello = Tello()
-# tello.takeoff()
+readMode = None
+readOptions = {}
 
+# Get CLI arguments
+if len(sys.argv) <= 1:
+    raise Exception("No read mode specified")
 
-# receives action from a GUI button and executes a corresponding Tello-Drone class move action, then returns "Done"
+elif sys.argv[1] == 'cyton':
+    readMode = 'cyton'
+    if len(sys.argv) <= 2:
+        raise Exception("No serial_port specified for cyton read mode")
+    else:
+        readOptions["serial_port"] = sys.argv[2]
 
+elif sys.argv[1] == 'synthetic':
+    readMode = 'synthetic'
+    
+else:
+    raise Exception("Invalid read mode specified")
 
 def get_drone_action(action):
 
@@ -92,7 +119,7 @@ def drone_holding_pattern():
 def use_brainflow():
     # Create BCI object
     bci = bciConnection()
-    server_response = bci.bciConnectionController()
+    server_response = bci.bciConnectionController(readMode, readOptions)
     return server_response
 
 
@@ -163,8 +190,7 @@ layout1 = [[sg.TabGroup([[
     key='layout1',enable_events=True)]]
 
 # Create the windows
-window1 = sg.Window('Start Page', layout1, size=(1200,800),element_justification='c',resizable=True,finalize=True)
-# window1.Maximize()
+window1 = sg.Window('Avatar', layout1, size=(1200,800),element_justification='c',resizable=True,finalize=True)
 
 # Event loop for the first window
 while True:

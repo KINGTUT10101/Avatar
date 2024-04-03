@@ -8,17 +8,28 @@ from brainflow.data_filter import DataFilter
 
 class bciConnection():
 
-    def read_from_board(self):
+    # readMode (string) Determines how the object will read data from OpenBCI. Supports "cyton" and "synthetic"
+    # options (dict) Contains extra options used by each readMode. For example, cyton mode needs a serial_port option
+    def read_from_board(self, readMode, options):
+        params = None
+        board = None
 
-        # print(BoardIds.CYTON_BOARD.value)
+        print (readMode)
 
-        # use synthetic board for demo
-        # params = BrainFlowInputParams()
-        # params.serial_port = "/dev/cu.usbserial-D200PMA1"
-        # board = BoardShim(BoardIds.CYTON_DAISY_BOARD.value, params)
+        if readMode == 'cyton':
+            if serial_port not in options:
+                raise Exception("BSI Connection: serial port for Cytopn connection not provided")
 
-        params = BrainFlowInputParams()
-        board = BoardShim(BoardIds.SYNTHETIC_BOARD.value, params)
+            params = BrainFlowInputParams()
+            params.serial_port = options.serial_port
+            board = BoardShim(BoardIds.CYTON_DAISY_BOARD.value, params)
+
+        elif readMode == 'synthetic':
+            params = BrainFlowInputParams()
+            board = BoardShim(BoardIds.SYNTHETIC_BOARD.value, params)
+
+        else:
+            raise Exception("BCI Connection: no valid read mode specified")
 
         board.prepare_session()
         board.start_stream(streamer_params="streaming_board://225.1.1.1:6677")
@@ -47,7 +58,7 @@ class bciConnection():
         response = requests.post(url, data=data_json, headers=headers)
         return response
 
-    def bciConnectionController(self):
+    def bciConnectionController(self, readMode, options):
         try:
             BoardShim.enable_dev_board_logger()
 
@@ -58,7 +69,7 @@ class bciConnection():
 
             # read eeg data from the board -- will start a bci session with your current board
             # allowing it to stream to BCI Gui App and collect 10 second data sample
-            data = self.read_from_board()
+            data = self.read_from_board(readMode, options)
             # Sends preprocessed data via http request to get a prediction
             server_response = self.send_data_to_server(data)
 
